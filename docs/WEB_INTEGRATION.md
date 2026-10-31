@@ -21,6 +21,6 @@ En el servicio API: `IAAPP_DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `C
 
 ## No terminado
 
-No se ha probado una sesión Clerk real, Postgres remoto ni intercambio ChatGPT. Faltan paginación/cursores en UI, selección de destinatarios IA, grupos nuevos, proyectos, memoria, invitaciones, archivos, PWA instalable y revisión visual completa. El envío actual dirige el mensaje a la sala sin invocar IAs. Los pendientes de persistencia MCP siguen en INTEGRATION_STATUS.md.
+No se ha probado una sesión Clerk real, Postgres remoto ni intercambio ChatGPT. Faltan paginación/cursores en UI, selección múltiple de destinatarios IA, grupos nuevos, proyectos, memoria, invitaciones, archivos, PWA instalable y revisión visual completa. El envío permite seleccionar una IA destinataria explícita; el backend comprueba membresía, consentimiento y conexión. En grupos también se permite un mensaje sin invocar IA. Los pendientes de persistencia MCP siguen en INTEGRATION_STATUS.md.
 
 El build local encuentra `ENOENT uv_resident_set_memory` en este entorno. El despliegue remoto debe compilar correctamente antes de activar esta entrega. CI ahora incluye typecheck y build web además de las comprobaciones del backend.
