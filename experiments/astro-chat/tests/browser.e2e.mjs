@@ -42,7 +42,7 @@ try {
   await a.locator('.message-row.mine .message-text').getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
   await b.locator('.room-item').first().waitFor({timeout:10000});
   await b.locator('.room-item').first().click();
-  await b.getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
+  await b.locator('#messageList').getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
   await b.locator('#messageInput').fill('Confirmo que lo recibí');
   await b.locator('#sendButton').click();
   await a.locator('#messageList').getByText('Confirmo que lo recibí').waitFor({timeout:10000});
@@ -55,7 +55,7 @@ try {
   assert.ok(measurements.scrollWidth<=measurements.innerWidth+1,'Hay desplazamiento horizontal móvil');
   assert.ok(measurements.composerBottom<=measurements.viewportHeight+1,'Compositor fuera de pantalla');
   await b.reload();
-  await b.getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
+  await b.locator('#messageList').getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
   assert.deepEqual(errors,[],'Error de JavaScript del navegador');
   console.log(JSON.stringify({passed:true,flows:['login dos cuentas','crear conversación','envío y recepción SSE','respuesta en vivo','recarga persistente','móvil 390px','escritorio 1440px'],measurements,errors}));
 }catch(e){console.error(e);process.exitCode=1;}
