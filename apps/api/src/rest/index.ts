@@ -117,6 +117,23 @@ export function createRestRouter(options: RestOptions) {
     limit: pageLimit(req.query.limit),
   });
   route("get", "/me", async (_, res) => repo.me(a(res)));
+  route("post", "/bootstrap", async (_req, res) => {
+    const identity = res.locals.identity;
+    const expected = process.env.IAAPP_BOOTSTRAP_SUBJECT;
+    if (!expected || identity.subject !== expected) fail("FORBIDDEN");
+    return options.db.transaction(async (tx) => {
+      // One founder for this database, even under concurrent requests.
+      await tx.query("SELECT pg_advisory_xact_lock(hashtext('iaapp:founder'))");
+      const existing = (await tx.query("SELECT id FROM iaapp.workspaces LIMIT 1")).rows[0];
+      if (existing) fail("CONFLICT");
+      const wid = randomUUID();
+      const pid = randomUUID();
+      await tx.query("INSERT INTO iaapp.workspaces(id,name) VALUES($1,$2)", [wid, "IAapp"]);
+      await tx.query("INSERT INTO iaapp.workspace_members(workspace_id,user_id,role) VALUES($1,$2,'owner')", [wid, a(res).userId]);
+      await tx.query("INSERT INTO iaapp.participants(id,workspace_id,kind,user_id,display_name,handle) VALUES($1,$2,'human',$3,$4,$5)", [pid, wid, a(res).userId, identity.displayName.slice(0,200) || 'Luis', `human-${pid}`]);
+      return { workspaceId: wid, participantId: pid };
+    });
+  }, [], []);
   route("get", "/workspaces/:id/participants", async (req, res) => {
     const p = paging(req);
     return repo.participants(a(res), param(req), p.cursor, p.limit);

@@ -17,7 +17,7 @@ La inspección de Vercel encontró cero variables en `iaapp-web` y `iaapp-design
 
 En `iaapp-web`: `IAAPP_API_BASE` (HTTPS terminado en `/api/v1`), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`; opcional `IAAPP_WORKSPACE_ID` (se valida contra `/me`). Configurar el dominio del sitio en Clerk. Sin IAAPP_API_BASE se conserva la demostración rotulada.
 
-En el servicio API: `IAAPP_DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_CLIENT_ID`, `IAAPP_ALLOWED_ORIGINS`; opcional `CLERK_AUDIENCE`. Aplicar migraciones y crear el primer espacio/membresía con el procedimiento administrativo del backend. No existe un alta pública automática de propietarios.
+En el servicio API: `IAAPP_DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_CLIENT_ID`, `IAAPP_ALLOWED_ORIGINS`; opcional `CLERK_AUDIENCE`. Aplicar migraciones. Para el primer espacio, fijar `IAAPP_BOOTSTRAP_SUBJECT` al ID verificado del fundador en el proveedor de identidad. Solo ese sujeto autenticado puede llamar `POST /api/v1/bootstrap`; la operación crea el espacio privado, la membresía `owner` y su participante humano, una sola vez por base. Sin la variable, responde 403. Una base que ya tiene un espacio responde 409. No existe alta pública automática de propietarios.
 
 ## No terminado
 

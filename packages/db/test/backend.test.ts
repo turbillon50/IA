@@ -30,6 +30,59 @@ export async function setup() {
     eve: { userId: f.eve },
   };
 }
+test("founder bootstrap accepts only the pinned identity and creates one private workspace", async () => {
+  const { createRestApp } = await import("../../../apps/api/src/rest/index.ts");
+  const { DomainError } = await import("../src/sql.ts");
+  const pg = new PGlite();
+  const db: Database = {
+    transaction: (work) => pg.transaction((tx) => work({
+      query: async (sql: string, params?: any[]) =>
+        params === undefined ? ((await tx.exec(sql)).at(-1) ?? { rows: [] }) : tx.query(sql, params),
+    } as Query)),
+  };
+  const previous = process.env.IAAPP_BOOTSTRAP_SUBJECT;
+  let server: ReturnType<ReturnType<typeof createRestApp>["listen"]> | undefined;
+  try {
+    await migrate(db);
+    const app = createRestApp({
+      db, allowedOrigins: [],
+      auth: { async authenticate(req) {
+        const subject = req.headers.get("authorization")?.replace("Bearer ", "");
+        if (!subject || !["founder", "other"].includes(subject)) throw new DomainError("UNAUTHENTICATED");
+        return { kind: "human_session", issuer: "https://issuer.example", clientId: "iaapp-pwa", subject, verifiedEmails: [], displayName: subject };
+      } },
+    });
+    server = app.listen(0, "127.0.0.1");
+    await new Promise<void>(resolve => server!.once("listening", resolve));
+    const port = (server.address() as { port: number }).port;
+    const request = async (subject: string) => {
+      const response = await fetch(`http://127.0.0.1:${port}/api/v1/bootstrap`, {
+        method: "POST", headers: { authorization: `Bearer ${subject}`, "content-type": "application/json" }, body: "{}",
+      });
+      return { status: response.status, body: await response.json() as any };
+    };
+    delete process.env.IAAPP_BOOTSTRAP_SUBJECT;
+    assert.equal((await request("founder")).status, 403);
+    process.env.IAAPP_BOOTSTRAP_SUBJECT = "founder";
+    assert.equal((await request("other")).status, 403);
+    const created = await request("founder");
+    assert.equal(created.status, 201);
+    assert.ok(created.body.workspaceId);
+    assert.ok(created.body.participantId);
+    assert.equal((await request("founder")).status, 409);
+    const rows = await db.transaction(tx => tx.query(
+      "SELECT wm.role, p.kind, p.user_id = wm.user_id AS same_user FROM iaapp.workspace_members wm JOIN iaapp.participants p ON p.workspace_id = wm.workspace_id WHERE wm.workspace_id=$1",
+      [created.body.workspaceId],
+    ));
+    assert.equal(rows.rows.length, 1);
+    assert.deepEqual([rows.rows[0].role, rows.rows[0].kind, rows.rows[0].same_user], ["owner", "human", true]);
+  } finally {
+    if (previous === undefined) delete process.env.IAAPP_BOOTSTRAP_SUBJECT;
+    else process.env.IAAPP_BOOTSTRAP_SUBJECT = previous;
+    if (server) await new Promise<void>((resolve, reject) => server!.close(error => error ? reject(error) : resolve()));
+    await pg.close();
+  }
+});
 const input = (body = "Hello") => ({
   body,
   recipientParticipantIds: [],
