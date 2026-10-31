@@ -1,17 +1,11 @@
 import type { NextConfig } from 'next';
 
-// Single production origin: Flutter owns the main chat; Next keeps identity,
-// account management, OAuth, MCP and the existing backend routes intact.
+// IAapp authenticates with its own account. Matrix/Flutter is no longer a
+// production entry point and is not needed to use ChatGPT MCP tools.
 const nextConfig: NextConfig = {
   transpilePackages: ['@iaapp/ui'],
-  async rewrites() {
-    return {
-      beforeFiles: [
-        { source: '/', destination: '/chat-client/index.html' },
-      ],
-      afterFiles: [],
-      fallback: [],
-    };
+  async redirects() {
+    return [{ source: '/chat-client/:path*', destination: '/chats', permanent: false }];
   },
 };
 export default nextConfig;
