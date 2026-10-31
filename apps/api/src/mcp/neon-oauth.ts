@@ -64,7 +64,7 @@ export function createNeonMcpConfig(options: NeonMcpOptions): McpConfig {
             (jwk.alg && jwk.alg !== 'RS256') || (jwk.use && jwk.use !== 'sig') ||
             (jwk.key_ops && (!Array.isArray(jwk.key_ops) || !jwk.key_ops.includes('verify'))) ||
             typeof jwk.n !== 'string' || typeof jwk.e !== 'string' || keys.has(jwk.kid)) continue;
-        keys.set(jwk.kid, createPublicKey({ key: jwk as import('node:crypto').JsonWebKey, format: 'jwk' }));
+        keys.set(jwk.kid, createPublicKey({ key: jwk as unknown as import('node:crypto').JsonWebKeyInput['key'], format: 'jwk' }));
       }
       if (!keys.size) throw new Error('NO_TRUSTED_KEYS');
       cache = { keys, expiresAt: Date.now() + 5 * 60_000 };
