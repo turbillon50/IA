@@ -1,26 +1,31 @@
-# Integración web — 31 de octubre de 2026
+# IAapp: web con identidad propia
 
-La aplicación Next está en el proyecto existente `iaapp-web`; `iaapp-design` conserva la referencia visual. No confundir un despliegue READY con una conexión real de cuentas.
+La entrada pública `/sign-in` inicia sesión con el servidor de IAapp. `/alta`
+consulta `/auth/profile` y muestra el número permanente de la persona autenticada.
+La PWA ya no importa SDKs ni usa cookies de Clerk o Neon Auth. El diseño existente
+se conserva. El alta pública sigue cerrada; las cuentas se aprovisionan o migran
+mediante comandos del operador.
 
-## Implementado
+## Conexión
 
-- ClerkProvider y middleware condicionales, entrada `/sign-in`.
-- Repositorio por solicitud: sesión actual, `/me`, pertenencia al espacio y Authorization Bearer. Nunca hay un repositorio autenticado global.
-- Proxy de mismo origen limitado a rutas de la API. Las mutaciones rechazan un origen distinto; el backend mantiene su autorización por recurso. Tokens y cookies no se exponen en DTOs.
-- Envío a la sala con idempotencia estable para reintentar el mismo contenido. El borrador se conserva ante fallos; solo se anuncia Guardado tras respuesta exitosa.
-- Actualización cada cinco segundos cuando la pestaña está visible, al recuperar red y al volver a la pestaña.
-- Carga, error y entrada a sesión. Una falla de datos reales nunca activa ejemplos.
+`IAAPP_AUTH_UPSTREAM` es una URL HTTPS fija, solo de servidor, que apunta a la API
+propia. Puede incluir el prefijo de Nginx. `/api/auth/*`, `/auth/*`, `/mcp` y las
+rutas públicas OAuth `/.well-known/*` se encaminan al mismo servidor. La lista de
+rutas permitidas excluye administración y alta pública.
 
-## Configuración pendiente comprobada
+Las cookies son de IAapp, HttpOnly y Secure. El proxy transmite Set-Cookie sin
+exponer su valor al JavaScript de la interfaz. El consentimiento conserva la
+consulta firmada original del navegador y lo valida el proveedor propio.
 
-La inspección de Vercel encontró cero variables en `iaapp-web` y `iaapp-design`. No se extrajeron ni copiaron credenciales de otros proyectos.
+El servidor REST usa la misma sesión validada. Los permisos de espacio y sala
+siguen aplicándose. El número no concede acceso por sí mismo.
 
-En `iaapp-web`: `IAAPP_API_BASE` (HTTPS terminado en `/api/v1`), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`; opcional `IAAPP_WORKSPACE_ID` (se valida contra `/me`). Configurar el dominio del sitio en Clerk. Sin IAAPP_API_BASE se conserva la demostración rotulada.
+## Primer alcance
 
-En el servicio API: `IAAPP_DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_CLIENT_ID`, `IAAPP_ALLOWED_ORIGINS`; opcional `CLERK_AUDIENCE`. Aplicar migraciones. Para el primer espacio, fijar `IAAPP_BOOTSTRAP_SUBJECT` al ID verificado del fundador en el proveedor de identidad. Solo ese sujeto autenticado puede llamar `POST /api/v1/bootstrap`; la operación crea el espacio privado, la membresía `owner` y su participante humano, una sola vez por base. Sin la variable, responde 403. Una base que ya tiene un espacio responde 409. No existe alta pública automática de propietarios.
+- Entrar con cuenta propia, ver el número, salir y volver a entrar conservándolo.
+- La interfaz muestra la conexión ChatGPT como pendiente hasta probarla realmente.
+- No se habilitan Events, emparejamientos ni mensajería entre IAs en este hito.
+- Login oficial SIWC e importación automática del historial no son requisitos.
 
-## No terminado
-
-No se ha probado una sesión Clerk real, Postgres remoto ni intercambio ChatGPT. Faltan paginación/cursores en UI, selección múltiple de destinatarios IA, grupos nuevos, proyectos, memoria, invitaciones, archivos, PWA instalable y revisión visual completa. El envío permite seleccionar una IA destinataria explícita; el backend comprueba membresía, consentimiento y conexión. En grupos también se permite un mensaje sin invocar IA. Los pendientes de persistencia MCP siguen en INTEGRATION_STATUS.md.
-
-El build local encuentra `ENOENT uv_resident_set_memory` en este entorno. El despliegue remoto debe compilar correctamente antes de activar esta entrega. CI ahora incluye typecheck y build web además de las comprobaciones del backend.
+Detalles del servidor, migraciones, cliente MCP y relevo:
+`apps/api/src/auth/SELF_HOSTED_HANDOFF.md`.

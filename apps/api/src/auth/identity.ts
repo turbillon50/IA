@@ -22,6 +22,10 @@ export class IdentityResolver {
   }
   async authenticate(request: Request) {
     const identity = await this.adapter.authenticate(request);
+    return this.resolve(identity);
+  }
+  /** Only invoke with a verified session or access token from a trusted adapter. */
+  async resolve(identity: HumanIdentity) {
     if (
       identity.kind !== "human_session" ||
       !identity.subject ||

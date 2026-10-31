@@ -69,6 +69,7 @@ export function createRestRouter(options: RestOptions) {
   router.use(async (req, res, next) => {
     try {
       const headers = new Headers();
+      if (req.get("cookie")) headers.set("cookie", req.get("cookie")!);
       if (req.get("authorization"))
         headers.set("authorization", req.get("authorization")!);
       const session = await resolver.authenticate(
