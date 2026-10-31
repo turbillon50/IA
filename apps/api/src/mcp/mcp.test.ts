@@ -142,3 +142,9 @@ test('profile mode exposes owner-scoped pull tools, but never native-chat push o
     assert.equal(calls.length, 1);
   } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
 });
+
+test('OAuth identity key uses the configured azp client, never an untrusted client_id claim', async () => {
+  const signed = jwt({ ...claims(), client_id: 'untrusted', azp: 'registered-chatgpt' } as any);
+  const principal = await authenticate(signed, { ...config, clientIdClaim: 'azp' }, ['iaapp:connect']);
+  assert.equal(principal.identityKey, hash(canonical([config.issuer, 'registered-chatgpt', 'owner-a'])));
+});
