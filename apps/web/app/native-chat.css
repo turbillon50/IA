@@ -1,0 +1,8 @@
+/* Native IAapp: private owner room controls. */
+.native-new-room{padding:0 16px 14px;flex:none}
+.native-create-button,.native-create-form button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:14px;border:1px solid #766086;background:#292132;color:#fff;cursor:pointer;font:inherit;text-decoration:none}
+.native-create-form{margin-top:13px;padding:13px;border-radius:14px;border:1px solid var(--border);background:#14141b;display:grid;gap:12px}
+.native-create-form label{display:grid;gap:7px;font-size:12px;color:var(--muted)}
+.native-create-form input{border:1px solid #46414d;background:#0f1014;color:var(--text);border-radius:11px;padding:12px;min-width:0;font-size:16px}
+.native-create-form p{margin:0;color:var(--muted);font-size:12px}
+.native-create-form button:disabled{opacity:.5}
