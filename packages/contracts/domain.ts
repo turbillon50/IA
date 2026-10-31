@@ -1,4 +1,4 @@
-/** IAapp contract v1.0. Domain proposal; not a running backend. */
+/** IAapp contract v1.1. Shared DTOs; deployment capability is reported separately. */
 export type ID = string;
 export type ISODate = string;
 export type UserRole = 'owner' | 'admin' | 'member';
@@ -24,7 +24,14 @@ export interface Message { id: ID; roomId: ID; senderParticipantId: ID; sequence
 export interface SendMessageInput { body: string; recipientParticipantIds: ID[]; attachmentIds: ID[]; }
 export interface Delivery { id: ID; messageId: ID; recipientParticipantId: ID; state: DeliveryState; attempts: number; receivedByHostAt: ISODate | null; responseMessageId: ID | null; lastErrorCode: string | null; }
 export interface MemoryEntry { id: ID; workspaceId: ID; scope: { kind: 'room' | 'project'; id: ID }; title: string; body: string; category: 'agreement' | 'criterion' | 'decision'; authorParticipantId: ID; sourceMessageId: ID | null; version: number; updatedAt: ISODate; }
-export interface Task { id: ID; projectId: ID; title: string; assignedParticipantId: ID | null; status: 'todo' | 'doing' | 'done'; }
+export interface Task { id: ID; projectId: ID; title: string; assignedParticipantId: ID | null; status: 'todo' | 'doing' | 'done'; version: number; }
+export interface ProjectSummary { roomCount: number; taskCount: number; completedTaskCount: number; memoryCount: number; }
+export type ProjectDetail = Project & { summary: ProjectSummary };
+export interface RequestMetadata { requestId: string; }
+export type APIResult<T> = T & RequestMetadata;
+export interface SendMessageResult { message: Message; deliveries: Delivery[]; }
+export interface AuthorizedUpdate { sequence: number; resourceKind: 'message' | 'memory' | 'task' | 'attachment'; resourceId: ID; version: number; }
+export interface UpdatesPage extends CursorPage<AuthorizedUpdate> { lastCursor: string; }
 export interface CursorPage<T> { items: T[]; nextCursor: string | null; }
 export interface APIError { error: { code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'CONFLICT' | 'RATE_LIMITED' | 'CONNECTION_UNAVAILABLE' | 'RETRYABLE'; message: string; requestId: string; retryAfterSeconds?: number; }; }
 /** Server-to-host only. Never pass replyCapability to PWA clients or logs. */

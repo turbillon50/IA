@@ -1,0 +1,54 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test
+> node --experimental-strip-types --test test/*.test.ts
+
+✔ room/message persistence, isolation, acceptance, replay conflict and reconnect (3648.994878ms)
+✔ transactional outbox, AI consent and unavailable connections roll back (2095.484341ms)
+✔ memory versioning, scope origin and private project isolation (2127.944759ms)
+✔ single-use hashed invitations, verified email, expiry and revoked issuer (1871.038858ms)
+✔ private files: ownership, inspection, cross-room IDs and revocation (1799.573787ms)
+✔ MCP persistence: stable event retry, single reply, no loops and revoked capabilities (2077.008871ms)
+✔ RLS denies direct client reads even after accidental SELECT grants (2421.320125ms)
+✔ REST validates server sender, verified identity, envelopes, isolation and idempotency (2624.390625ms)
+✔ identities with equal verified email never merge across subjects or clients (3585.262479ms)
+✔ authorized update cursors survive reconnect and deny revoked clients (2614.657711ms)
+✔ persisted message and outbox survive a database close/reopen (2918.414885ms)
+✔ two independent owners cannot access each other's workspace resources (1907.740339ms)
+✔ reader role and expired subscriptions cannot write or activate an AI (1852.290985ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32044.612003
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> check
+> tsc --noEmit
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> check
+> tsc --noEmit -p tsconfig.json
+
+
+Additional observed checks (separate commands):
+- npm audit --omit=dev --audit-level=high in packages/db: found 0 vulnerabilities.
+- npm audit --omit=dev --audit-level=high in apps/api/src/auth: found 0 vulnerabilities.
+- npm audit --omit=dev --audit-level=high in apps/api/src/rest: found 0 vulnerabilities.
+- git diff --check: passed.
+
+Execution scope: Node v24.22.1; PGlite 0.5.13 (embedded Postgres/WASM),
+synthetic identities, synthetic private storage, in-process Express HTTP.
+No live Clerk, Supabase Storage/Realtime, OAuth, ChatGPT Events or external
+callbacks were exercised. Multi-connection Postgres contention and production
+restore remain integration gates; concurrent test invocations use one embedded
+connection. See HANDOFF.md for exact boundaries and proposed contract additions.

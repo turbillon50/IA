@@ -1,4 +1,4 @@
-# IAapp — Contrato de integración v1.0
+# IAapp — Contrato de integración v1.1
 
 Este documento es un contrato de construcción, no una API desplegada. Tipos canónicos en `packages/contracts/domain.ts`. API base `/api/v1`, JSON UTF-8, IDs opacos, fechas ISO8601 UTC. La interfaz convierte fechas a la zona del usuario. Cada respuesta incluye `requestId`. No añadir campos secretos a DTOs compartidos.
 
@@ -36,6 +36,20 @@ Este documento es un contrato de construcción, no una API desplegada. Tipos can
 | GET `/admin/workspaces/:id/deliveries` | filtros + cursor | admin; sin secretos ni contenido privado ajeno |
 
 Las escrituras de mensajes, memoria y tareas deben pasar por la API para asegurar permisos e invariantes. Si se usa service role, la API no puede confiar en que RLS haga la autorización por ella. Usar transacciones y consultas con filtros explícitos por tenant y actor.
+
+### Extensiones aceptadas por integración A — 31-oct-2026
+
+La entrega REST incorpora estas extensiones aditivas. El frontend debe consumir estas formas exactas al sustituir fixtures por la API:
+
+- Respuesta individual: DTO con `requestId` al mismo nivel. Listas: `{items, requestId}`; páginas: `{items, nextCursor, requestId}`.
+- POST de mensaje: `{message, deliveries, requestId}` (`APIResult<SendMessageResult>`).
+- `Task.version` es obligatorio para el control optimista. GET de proyecto añade `summary: {roomCount, taskCount, completedTaskCount, memoryCount}`, limitado al acceso del solicitante.
+- POST `/rooms/:id/membership/accept`: `{participantId}` → Room. Solo el propio humano o dueño de esa IA puede aceptar.
+- POST `/admin/workspaces/:id/members/:userId/revoke`: `{}` → `{revoked:true, requestId}`; controles de rol, sin auto-revocación ni revocación del owner.
+- GET `/updates?scopeKind=room|project&scopeId=UUID&after=0&limit=50`: `{items,nextCursor,lastCursor,requestId}`. Elementos `AuthorizedUpdate`; guardar `lastCursor` incluso al terminar la página. Es consulta autorizada, no un canal Realtime activo.
+- IDs de entidades REST: UUID. Cursores de listados: UUID; cursores de mensajes y cambios: secuencia decimal. El cliente debe conservarlos como cadenas opacas.
+
+El transporte MCP y el repositorio de entregas todavía requieren un adaptador entre sus interfaces privadas; esta actualización no los declara conectados. Ver `docs/INTEGRATION_STATUS.md`.
 
 ## Herramientas MCP propuestas
 
