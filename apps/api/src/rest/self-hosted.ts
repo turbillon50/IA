@@ -16,6 +16,24 @@ export function createSelfHostedApplication(options: SelfHostedOptions) {
       res.json(profile);
     } catch { res.status(401).json({ error: 'UNAUTHENTICATED' }); }
   });
+  // Better Auth returns JSON navigation instructions for its custom login and
+  // consent pages. OAuth clients open authorize in a browser, not its JS SDK.
+  app.get('/api/auth/oauth2/authorize', toNodeHandler(async (request: Request) => {
+    const response = await own.auth.handler(request);
+    if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+      const data = await response.clone().json() as { redirect?: boolean; url?: string };
+      if (data.redirect === true && typeof data.url === 'string') {
+        const target = new URL(data.url);
+        if (target.protocol === 'https:' || target.origin === own.origin) {
+          const headers = new Headers(response.headers);
+          headers.delete('content-type'); headers.delete('content-length');
+          headers.set('Location', target.href); headers.set('Cache-Control', 'no-store');
+          return new Response(null, { status: 302, headers });
+        }
+      }
+    }
+    return response;
+  }));
   app.all('/api/auth/*splat', toNodeHandler(own.auth));
   app.get(['/.well-known/oauth-authorization-server/api/auth', '/api/auth/.well-known/oauth-authorization-server'], toNodeHandler(oauthProviderAuthServerMetadata(own.auth)));
   app.get(['/.well-known/openid-configuration/api/auth', '/api/auth/.well-known/openid-configuration'], toNodeHandler(oauthProviderOpenIdConfigMetadata(own.auth)));

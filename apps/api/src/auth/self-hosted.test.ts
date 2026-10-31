@@ -99,6 +99,16 @@ test('self-hosted account -> real OAuth code + PKCE -> authorized persistent lin
     const line = JSON.parse(result.data.result.content[0].text);
     assert.equal(line.displayName, 'Alice test'); assert.match(line.lineNumber, /^\d+$/);
     const base = endpoint.slice(0, -4);
+    // Exercise the real HTTP entry point used by ChatGPT's browser popup.
+    const browserAuth = await fetch(base + '/api/auth/oauth2/authorize?' + params, {
+      redirect: 'manual', headers: { accept: 'text/html' },
+    });
+    assert.equal(browserAuth.status, 302, 'OAuth navigation must redirect, not render JSON');
+    const browserLogin = new URL(browserAuth.headers.get('location')!);
+    assert.equal(browserLogin.origin, options.baseURL);
+    assert.equal(browserLogin.pathname, '/auth/sign-in');
+    assert.ok(browserLogin.searchParams.get('sig'), 'signed OAuth query survives navigation');
+    assert.equal(browserAuth.headers.get('cache-control'), 'no-store');
     const accountPage = await fetch(base + '/auth/sign-in');
     assert.equal(accountPage.status, 200);
     const html = await accountPage.text();
