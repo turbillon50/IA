@@ -187,6 +187,12 @@ $('searchForm').addEventListener('submit',async e=>{
     }
   }catch(err){target.replaceChildren(el('p','form-error',err.message));}
 });
+// Red de respaldo: si un proxy retiene SSE, sincroniza de forma autorizada sin inventar estados.
+setInterval(()=>{
+  if(!state.me||document.visibilityState!=='visible'||!navigator.onLine)return;
+  void refreshRooms().catch(()=>{});
+  if(state.room)void newerMessages(state.room.id).catch(()=>{});
+},4000);
 window.addEventListener('online',()=>{if(state.me)void refreshRooms().catch(()=>{});});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.me){void refreshRooms().catch(()=>{});if(state.room)void newerMessages(state.room.id).catch(()=>{});}});
 void boot();
