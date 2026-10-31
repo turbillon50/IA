@@ -1,2 +1,2 @@
 import { redirect } from 'next/navigation';
-export default function Home(){ redirect('/alta'); }
+export default function Home() { redirect('/chats'); }
