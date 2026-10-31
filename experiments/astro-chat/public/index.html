@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090c">
+  <meta name="description" content="Chat privado IAapp — piloto funcional">
+  <title>IAapp · Chat</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <section id="loginScreen" class="auth">
+    <div class="login-panel">
+      <div class="logo-mark">IA<span>app</span><i>•</i></div>
+      <p class="overline">MENSAJERÍA PRIVADA</p>
+      <h1>Una conversación real empieza aquí.</h1>
+      <p class="intro">Entra con tu cuenta de prueba. Tus mensajes se conservan en el servidor.</p>
+      <form id="loginForm">
+        <label>Usuario<input id="username" autocomplete="username" placeholder="tu usuario" required minlength="3"></label>
+        <label>Contraseña<input id="password" type="password" autocomplete="current-password" placeholder="••••••••••" required></label>
+        <button class="primary" id="loginButton">Entrar al chat <span>→</span></button>
+        <p id="loginError" role="alert" class="form-error"></p>
+      </form>
+      <p class="footnote">Laboratorio aislado · Sin conexión todavía a ChatGPT Work</p>
+    </div>
+  </section>
+  <div id="workspace" class="workspace" hidden>
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="topline">
+          <div class="logo-mark">IA<span>app</span><i>•</i></div>
+          <button id="logoutButton" class="icon-button" title="Cerrar sesión" aria-label="Cerrar sesión">⎋</button>
+        </div>
+        <p class="overline">MIS CONVERSACIONES</p>
+        <div class="list-title"><h1>Mensajes</h1><button id="newRoomButton" class="new-room" aria-label="Nuevo chat" title="Nuevo chat">＋</button></div>
+        <label class="searchbar"><span>⌕</span><input id="filterRooms" type="search" placeholder="Buscar conversación" autocomplete="off"></label>
+        <div class="sidebar-actions"><button id="globalSearchButton" class="text-button">Buscar mensajes</button><span id="connectionState" class="connection-state">Conectando…</span></div>
+      </div>
+      <div id="roomList" class="room-list" aria-label="Conversaciones"></div>
+      <div class="sidebar-foot"><span class="mini-dot"></span><span id="profileName">Tu cuenta</span><span class="pilot">PILOTO REAL</span></div>
+    </aside>
+    <main class="conversation" id="conversation">
+      <section id="noRoom" class="no-room"><div class="no-room-symbol">✦</div><h2>Estamos conectados.</h2><p>Abre una conversación o crea un chat para empezar.</p></section>
+      <div id="activeRoom" class="active-room" hidden>
+        <header class="conversation-header">
+          <button id="backButton" class="back-button" aria-label="Volver a conversaciones">‹</button>
+          <div class="header-avatar" id="chatAvatar">✦</div>
+          <div class="header-copy"><strong id="roomTitle">Conversación</strong><span id="roomSubtitle">Mensajería privada</span></div>
+          <button id="refreshButton" class="icon-button refresh-button" aria-label="Actualizar mensajes" title="Actualizar">↻</button>
+        </header>
+        <div class="messages-scroll" id="messagesScroll" role="log" aria-label="Mensajes de la conversación" aria-live="polite">
+          <button id="loadOlder" class="load-older" hidden>Ver mensajes anteriores</button>
+          <div id="messageList" class="message-list"></div>
+          <div id="emptyMessages" class="empty-messages" hidden><span>✧</span><p>Escribe el primer mensaje.</p></div>
+        </div>
+        <form id="composeForm" class="composer-area">
+          <div class="composer">
+            <textarea id="messageInput" rows="1" maxlength="8000" placeholder="Escribe un mensaje…" aria-label="Escribe un mensaje"></textarea>
+            <button id="sendButton" type="submit" class="send-button" aria-label="Enviar mensaje" disabled>↑</button>
+          </div>
+          <p class="composer-status" id="sendStatus" role="status">Enter para enviar · Shift + Enter para otra línea</p>
+        </form>
+      </div>
+    </main>
+  </div>
+  <dialog id="newRoomDialog" class="dialog">
+    <form id="newRoomForm">
+      <div class="dialog-head"><h2>Nueva conversación</h2><button type="button" class="dialog-close" data-close="newRoomDialog" aria-label="Cerrar">×</button></div>
+      <label>Tipo de conversación<select id="roomKind"><option value="direct">Persona a persona</option><option value="group">Grupo</option></select></label>
+      <label id="groupNameLabel" hidden>Nombre del grupo<input id="groupName" maxlength="80" placeholder="Mi equipo"></label>
+      <label>Usuarios <small>(para grupos, separados por coma)</small><input id="peerNames" placeholder="usuario" required></label>
+      <p class="hint">Los participantes deben tener una cuenta habilitada. El acceso a los mensajes es privado.</p>
+      <p class="form-error" id="roomError" role="alert"></p>
+      <button class="primary" type="submit">Crear conversación <span>→</span></button>
+    </form>
+  </dialog>
+  <dialog id="searchDialog" class="dialog">
+    <form id="searchForm">
+      <div class="dialog-head"><h2>Buscar mensajes</h2><button type="button" class="dialog-close" data-close="searchDialog" aria-label="Cerrar">×</button></div>
+      <label>Texto<input id="searchQuery" minlength="2" maxlength="100" placeholder="Buscar en mis conversaciones" required></label>
+      <button class="primary" type="submit">Buscar <span>⌕</span></button>
+    </form>
+    <div id="searchResults" class="search-results"></div>
+  </dialog>
+</body>
+</html>
