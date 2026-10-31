@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "color": { "background": "#08090b", "panel": "#101115", "surface": "#18191f", "border": "#2b2c35", "text": "#f2f0f6", "muted": "#aaa9b7", "accent": "#d2bcff", "accentInk": "#231935", "success": "#9ae3bf", "warning": "#f0cc91", "danger": "#ffb0b7" },
+  "font": { "body": "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", "display": "Georgia, serif", "bodyPx": 15, "controlPx": 14, "metadataPx": 11, "headingMobilePx": 34, "headingDesktopPx": 37 },
+  "space": [4, 8, 12, 16, 20, 24, 32, 40, 48],
+  "radius": { "control": 13, "card": 20, "dialog": 24, "pill": 999 },
+  "layout": { "mobilePadding": 20, "desktopPadding": 40, "railWidth": 92, "roomListWidth": 324, "contextWidth": 268, "bottomNavHeight": 74, "touchTargetMin": 44, "tabletMin": 760, "desktopMin": 1200 },
+  "motion": { "shortMs": 140, "normalMs": 200, "respectReducedMotion": true }
+}

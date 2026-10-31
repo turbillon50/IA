@@ -1,42 +1,27 @@
-# IAapp
+# IAapp — contexto vigente
 
-Status: concept and integration validation; no working app or hackathon submission yet.
+Actualizado el 30 de octubre de 2026, America/Cancun.
 
-## Product
-Messaging for people and selectively connected original AI conversations. Users choose which conversations to connect; no bulk history import. Rooms store their own messages and explicit agreements. Private source-chat history is not automatically shared.
+El proyecto se encuentra en diseño y preparación de implementación. El plan vigente es [BUILD_PLAN.md](BUILD_PLAN.md); la especificación de interfaz es [SCREENS.md](SCREENS.md). El repositorio contiene una maqueta interactiva con datos de ejemplo. No se han validado conexiones reales de IAapp mediante MCP Events ni iniciado sesiones productivas.
 
-## First acceptance test
-One human, two original compatible ChatGPT Work conversations, one room. Deliver a message, invoke the subscribed chat through MCP Events, return its response through an authorized MCP tool, persist it and display it. Test closed UI, duplicate delivery, retry, permission revocation and prevention of response loops. Account availability remains to be verified. Claude and Grok original-chat connectivity remains unconfirmed.
+## Objetivo
 
-## Identity
-Official Sign in with ChatGPT is the proposed registration path, subject to integration eligibility. Identity sign-in does not import conversations or memory. Individual chat pairing is a separate authorization.
+Mensajería para varias personas con las conversaciones originales de IA que cada una elija conectar. Piloto privado por invitación, grupos, proyectos y memoria explícita de acuerdos. Sin importación masiva de conversaciones ni publicación del contexto privado de origen.
 
-## Proposed stack
-Next.js, TypeScript, Tailwind and Vercel for the PWA; Supabase Postgres, Realtime and Storage for messages and attachments; Node.js MCP service and durable event delivery on Railway. Authentication provider choice must accommodate official ChatGPT sign-in. No infrastructure has been provisioned.
+## Integración inicial
 
-## Work allocation proposal
-- Luis: product scope, acceptance and submission representative if selected.
-- Connection workstream: prove sign-in eligibility and original-chat round trip.
-- Messaging workstream: identities, rooms, permissions, durable messages and event delivery.
-- Interface workstream: approved visual direction, inbox, direct conversation and groups.
-- Delivery workstream: integration tests, reproducible setup, English demo and submission package.
+ChatGPT Work con MCP Events, sujeto a disponibilidad y políticas de cada cuenta. Conexión por conversación y suscripción; retorno por herramienta MCP autenticada. Claude/Grok y otros proveedores no están confirmados para chats originales y quedan fuera del piloto.
 
-Workstream owners other than Luis are not assigned. AI assistants are development tools, not separately registered human contestants.
+El registro oficial con ChatGPT sigue siendo deseado y depende de obtener acceso y un cliente registrado. Autenticación de IAapp, autorización del plugin y emparejamiento de cada conversación son operaciones separadas.
 
-## Hackathons reviewed 2026-10-30 America/Cancun
-PayPal: individuals, teams and organizations allowed; multiple entries must be substantially different. PayPal sandbox integration must be central, alongside AI. Public source repository with an open-source license; functional demo; video under three minutes; English materials or translations. Existing projects need significant updates during the submission period. Deadline November 12 at 12:00 PST (15:00 Cancun). IAapp currently lacks the required PayPal use case and implementation.
+## Reparto
 
-Hack the Audience (Extriver): assumed second event from discussion, not yet confirmed by Luis. November 5–December 5; up to three team members; one project for one creator. Advertised creator partnership includes 20% of contracted net revenue for 24 months. Final eligibility, IP and commercialization terms remain to be verified; linked rules currently return the landing page. No registration or commercial agreement accepted.
+Cinco funciones propuestas: dirección/integración, frontend, datos/permisos, MCP/worker y QA/entrega. Encargos en `docs/handoffs`. No se han asignado ni activado otros chats automáticamente.
 
-Recommendation: one focused submission with explicit workstreams first. Do not duplicate the same project under different contestant identities.
+## Aclaración sobre hackatones
 
-## License
-Apache-2.0, see ../LICENSE. Permits commercial use subject to its terms; does not make the project nonprofit or guarantee compliance with third-party terms. Dependencies retain their own licenses.
+La mención anterior de Extriver como segundo hackatón fue provisional e incorrecta; el evento identificado posteriormente en la conversación fue Vultr. IAapp, el caso de pagos de VanLink y la participación en eventos tienen alcances separados. Este repositorio no acredita inscripción ni implementación PayPal. No incorporar requisitos comerciales externos sin verificar las reglas vigentes para la entrega elegida.
 
-## Sources
-- https://paypalaihackathon.devpost.com/rules
-- https://extriver.com/event1/
-- https://www.apache.org/licenses/LICENSE-2.0
-- https://developers.openai.com/siwc/quickstart
-- https://developers.openai.com/plugins/build/mcp-events
-- https://help.openai.com/en/articles/20001410-sign-in-with-chatgpt
+## Licencia
+
+Apache-2.0, ver `LICENSE`. Permite uso comercial sujeto a sus términos; no convierte el proyecto en una entidad sin fines de lucro.
