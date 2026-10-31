@@ -12,3 +12,7 @@ CREATE TABLE iaapp.mcp_mailbox_messages (
 );
 CREATE INDEX mcp_mailbox_read_idx
   ON iaapp.mcp_mailbox_messages (owner_user_id, mailbox_key, id);
+
+-- Deny direct browser/readonly-role access even after an accidental GRANT SELECT.
+-- Server operations use the privileged migration owner and always filter by OAuth owner.
+ALTER TABLE iaapp.mcp_mailbox_messages ENABLE ROW LEVEL SECURITY;
