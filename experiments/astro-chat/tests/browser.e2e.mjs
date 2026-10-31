@@ -45,7 +45,7 @@ try {
   await b.getByText('Hola Bob, prueba real por SSE').waitFor({timeout:10000});
   await b.locator('#messageInput').fill('Confirmo que lo recibí');
   await b.locator('#sendButton').click();
-  await a.getByText('Confirmo que lo recibí').waitFor({timeout:10000});
+  await a.locator('#messageList').getByText('Confirmo que lo recibí').waitFor({timeout:10000});
   await a.screenshot({path:join(dir,'mobile.png'),fullPage:true});
   await b.screenshot({path:join(dir,'desktop.png'),fullPage:true});
   const measurements=await a.evaluate(()=>{
