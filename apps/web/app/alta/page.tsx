@@ -8,5 +8,5 @@ export default async function AltaPage(){
  let profile;
  try{profile=await myProfile();}catch{return <main className="setup"><h1>No pudimos cargar tu línea.</h1><p>Intenta de nuevo en unos minutos.</p><Link href="/sign-in">Volver al acceso</Link></main>;}
  if(!profile)redirect('/sign-in');
- return <main className="setup"><div className="setup-card"><p className="eyebrow">TU NÚMERO PERSONAL</p><h1>{profile.lineNumber}</h1><p>Esta línea pertenece a tu cuenta, <strong>{profile.displayName}</strong>.</p><div className="setup-step"><h2>Tu cuenta está lista.</h2><p>La vinculación con ChatGPT se autoriza desde el conector de IAapp.</p><span className="badge">Vinculación pendiente</span></div><Logout/></div></main>;
+ return <main className="setup"><div className="setup-card"><p className="eyebrow">TU NÚMERO PERSONAL</p><h1>{profile.lineNumber}</h1><p>Esta línea pertenece a tu cuenta, <strong>{profile.displayName}</strong>.</p><div className="setup-step"><h2>Tu cuenta está lista.</h2><p>La vinculación con ChatGPT se autoriza desde el conector de IAapp.</p><span className="badge">Vinculación pendiente</span></div><Link href="/chats" className="native-create-button">Abrir mis conversaciones</Link><Logout/></div></main>;
 }
