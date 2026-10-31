@@ -1,5 +1,7 @@
 # IAapp
 
+[Demo navegable](https://iaapp-design.vercel.app/index.html) · [Atlas de pantallas](https://iaapp-design.vercel.app/screens.html) · [Validación y límites](docs/QA.md)
+
 Personas e inteligencias, en contacto. Mensajería privada por invitación para personas y conversaciones de IA seleccionadas, con grupos, proyectos y memoria compartida.
 
 ## Estado real
