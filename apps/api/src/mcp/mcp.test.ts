@@ -102,3 +102,49 @@ test('HTTP endpoint authenticates before dispatch, protects model arguments and 
     assert.equal((await rpc('tools/call', { name: 'claim_pairing', arguments: { code: 'code-a' } })).body.error.message, 'INTERNAL_ERROR');
   } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
 });
+
+test('profile mode exposes owner-scoped pull tools, but never native-chat push or Events', async () => {
+  const calls: Array<{ owner: string; mailbox: string }> = [];
+  const server = createServer(createMcpHandler({
+    mode: 'profile', oauth: config, metadataUrl: 'https://api.example.test/.well-known/oauth-protected-resource',
+    allowedOrigins: [], getAuthorizedProfile: async owner => ({ userId: owner, lineNumber: '100000', displayName: 'Test' }),
+    mailbox: {
+      post: async (owner, input) => { calls.push({ owner, mailbox: input.mailbox }); return { messageId: '1', mailbox: input.mailbox, duplicate: false }; },
+      read: async (_owner, _mailbox, afterId) => ({ messages: [], nextCursor: afterId }),
+      list: async () => ({ mailboxes: [] }),
+    },
+  }));
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  const port = (server.address() as any).port;
+  async function rpc(method: string, params: object, auth = jwt()) {
+    const response = await fetch(`http://127.0.0.1:${port}/mcp`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', authorization: auth },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    });
+    return { status: response.status, body: await response.json() as any };
+  }
+  try {
+    const list = await rpc('tools/list', {});
+    const names = list.body.result.tools.map((item: any) => item.name);
+    assert.deepEqual(names, ['get_my_profile', 'post_mailbox_message', 'read_mailbox_messages', 'list_mailboxes']);
+    assert.deepEqual((await rpc('events/list', {})).body.result.events, []);
+    assert.equal((await rpc('tools/call', { name: 'post_mailbox_message', arguments: {
+      mailbox: 'chat-b', senderLabel: 'chat-a', body: 'SÍ SÍ', idempotencyKey: 'probe-1',
+    } })).body.result.isError, false);
+    assert.deepEqual(calls, [{ owner: 'user-a', mailbox: 'chat-b' }]);
+    assert.equal((await rpc('tools/call', { name: 'post_mailbox_message', arguments: {
+      mailbox: 'chat-b', senderLabel: 'chat-a', body: 'SÍ SÍ', idempotencyKey: 'probe-1', targetUserId: 'another',
+    } })).body.error.code, -32602);
+    assert.equal(calls.length, 1);
+    assert.equal((await rpc('tools/call', { name: 'post_mailbox_message', arguments: {
+      mailbox: 'chat-b', senderLabel: 'chat-a', body: 'SÍ SÍ', idempotencyKey: 'probe-2',
+    } }, 'Bearer bad')).status, 401);
+    assert.equal(calls.length, 1);
+  } finally { server.close(); server.closeAllConnections(); await once(server, 'close'); }
+});
+
+test('OAuth identity key uses the configured azp client, never an untrusted client_id claim', async () => {
+  const signed = jwt({ ...claims(), client_id: 'untrusted', azp: 'registered-chatgpt' } as any);
+  const principal = await authenticate(signed, { ...config, clientIdClaim: 'azp' }, ['iaapp:connect']);
+  assert.equal(principal.identityKey, hash(canonical([config.issuer, 'registered-chatgpt', 'owner-a'])));
+});

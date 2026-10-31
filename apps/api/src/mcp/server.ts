@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { McpRepository } from './ports.ts';
+import type { MailboxPort } from './mailbox.ts';
+import { DomainError } from '../../../../packages/db/src/sql.ts';
 import { authenticate, canonical, hash, seal, signingKey, subscriptionId, token, type OAuthConfig, type Principal } from './security.ts';
 import { verifyCallback, type WebhookPost } from './webhook.ts';
 
@@ -11,6 +13,11 @@ export const eventDefinition = {
   delivery: ['webhook'], inputSchema: objectSchema({ participantId: str }),
   payloadSchema: objectSchema({ deliveryId: str, messageId: str, roomId: str, recipientParticipantId: str, summary: str, replyCapability: str }),
 };
+const mailboxTools = [
+  { name: 'post_mailbox_message', description: 'Write a message to an IAapp owner-scoped mailbox. Requires an explicit user request. Sender labels are self-declared; does NOT post into a native ChatGPT thread.', inputSchema: objectSchema({ mailbox: str, senderLabel: str, body: str, idempotencyKey: str }) },
+  { name: 'read_mailbox_messages', description: 'Pull messages from an IAapp mailbox. This does NOT wake or access other native ChatGPT conversations. Provide the last cursor on subsequent reads.', inputSchema: objectSchema({ mailbox: str, afterId: str }, ['mailbox']), annotations: { readOnlyHint: true } },
+  { name: 'list_mailboxes', description: 'List IAapp mailbox names and counts belonging to this authorized owner, not ChatGPT threads.', inputSchema: objectSchema({}), annotations: { readOnlyHint: true } },
+];
 const tools = [
   { name: 'get_my_profile', description: 'Identify the authorized IAapp owner, not an official ChatGPT thread identity.', inputSchema: objectSchema({}), annotations: { readOnlyHint: true } },
   { name: 'claim_pairing', description: 'Claim the owner-issued single-use IAapp pairing code.', inputSchema: objectSchema({ code: str }) },
@@ -40,6 +47,7 @@ interface BaseMcpConfig {
 export type McpConfig = BaseMcpConfig & ({
   mode: 'profile';
   getAuthorizedProfile(userId: string): Promise<{ userId: string; lineNumber: string; displayName: string } | null>;
+  mailbox?: MailboxPort;
 } | {
   mode?: 'full'; repository: McpRepository; webhookPost: WebhookPost; encryptionKey: Buffer;
 });
@@ -79,7 +87,7 @@ export function createMcpHandler(config: McpConfig) {
         case 'initialize': result = { protocolVersion: '2025-03-26', capabilities: config.mode === 'profile' ? { tools: {} } : { tools: {}, events: {} }, serverInfo: { name: 'iaapp', version: '0.1.0' } }; break;
         case 'ping': result = {}; break;
         case 'events/list': result = { events: config.mode === 'profile' ? [] : [eventDefinition] }; break;
-        case 'tools/list': result = { tools: config.mode === 'profile' ? tools.filter(t => t.name === 'get_my_profile') : tools }; break;
+        case 'tools/list': result = { tools: config.mode === 'profile' ? [...tools.filter(t => t.name === 'get_my_profile'), ...(config.mailbox ? mailboxTools : [])] : tools }; break;
         case 'events/subscribe':
         case 'events/unsubscribe': {
           if (config.mode === 'profile') throw new RpcError(-32601, 'METHOD_NOT_FOUND');
@@ -124,7 +132,18 @@ export function createMcpHandler(config: McpConfig) {
               value = profile;
             } else value = { userId: principal.userId };
           }
-          else if (config.mode === 'profile') throw new RpcError(-32601, 'UNKNOWN_TOOL');
+          else if (config.mode === 'profile' && config.mailbox && p.name === 'post_mailbox_message') {
+            keys(a, ['mailbox', 'senderLabel', 'body', 'idempotencyKey']);
+            value = await config.mailbox.post(principal.userId, {
+              mailbox: text(a.mailbox, 64), senderLabel: text(a.senderLabel, 80),
+              body: text(a.body, 8192), idempotencyKey: text(a.idempotencyKey, 128),
+            });
+          } else if (config.mode === 'profile' && config.mailbox && p.name === 'read_mailbox_messages') {
+            keys(a, ['mailbox', 'afterId']);
+            value = await config.mailbox.read(principal.userId, text(a.mailbox, 64), a.afterId === undefined ? '0' : text(a.afterId, 18), 50);
+          } else if (config.mode === 'profile' && config.mailbox && p.name === 'list_mailboxes') {
+            keys(a, []); value = await config.mailbox.list(principal.userId);
+          } else if (config.mode === 'profile') throw new RpcError(-32601, 'UNKNOWN_TOOL');
           else if (p.name === 'claim_pairing') {
             keys(a, ['code']); const binding = await config.repository.claimPairing(principal, hash(text(a.code, 128)), Date.now());
             value = { connectionId: binding.id, participantId: binding.participantId, generation: binding.generation, state: binding.state };
@@ -142,7 +161,9 @@ export function createMcpHandler(config: McpConfig) {
       return send(res, 200, { jsonrpc: '2.0', id, result });
     } catch (error) {
       // Never return raw exception text: a network/DB error can contain secrets.
-      const safe = error instanceof RpcError ? error : new RpcError(-32603, 'INTERNAL_ERROR');
+      const safe = error instanceof RpcError ? error
+        : error instanceof DomainError ? new RpcError(error.code === 'VALIDATION_ERROR' ? -32602 : error.code === 'CONFLICT' ? -32009 : -32001, error.code)
+        : new RpcError(-32603, 'INTERNAL_ERROR');
       return send(res, 200, { jsonrpc: '2.0', id, error: { code: safe.code, message: safe.reason, data: { reason: safe.reason } } });
     }
   };

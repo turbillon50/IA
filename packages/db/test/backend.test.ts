@@ -566,7 +566,7 @@ test("RLS denies direct client reads even after accidental SELECT grants", async
         "SELECT relname,relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='iaapp' AND relkind='r'",
       )
     ).rows;
-    assert.equal(rows.length, 24);
+    assert.equal(rows.length, 25);
     assert.ok(rows.every((r) => r.relrowsecurity));
   } finally {
     await pg.close();

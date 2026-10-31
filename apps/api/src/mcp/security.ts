@@ -73,6 +73,6 @@ export async function authenticate(header: string | undefined, config: OAuthConf
     if (config.isTokenActive && !await config.isTokenActive(header.slice(7), clientId)) throw new Error();
     const userId = await config.resolveIdentity({ issuer: c.iss, clientId, subject: c.sub, tokenId: c.jti });
     if (!userId) throw new Error();
-    return { userId, identityKey: hash(canonical([c.iss, c.client_id, c.sub])), scopes };
+    return { userId, identityKey: hash(canonical([c.iss, clientId, c.sub])), scopes };
   } catch { throw new Error('UNAUTHENTICATED'); }
 }
