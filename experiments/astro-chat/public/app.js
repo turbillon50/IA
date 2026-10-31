@@ -70,6 +70,7 @@ async function openRoom(id,highlight){
   const room=state.rooms.find(x=>x.id===id);
   if(!room)return;
   state.room=room;state.messages=[];state.nextBefore=null;
+  sessionStorage.setItem('iachat:last:'+state.me.id,id);
   $('workspace').classList.add('open-room');
   $('noRoom').hidden=true;$('activeRoom').hidden=false;
   $('roomTitle').textContent=room.name;
@@ -118,7 +119,10 @@ async function boot(){
     const me=await api('/api/me');state.me=me.user;
     $('profileName').textContent=state.me.displayName;
     $('loginScreen').hidden=true;$('workspace').hidden=false;
-    await refreshRooms();connectLive();
+    await refreshRooms();
+    const previous=sessionStorage.getItem('iachat:last:'+state.me.id);
+    if(previous&&state.rooms.some(x=>x.id===previous))await openRoom(previous);
+    connectLive();
   }catch{showLogin();}
 }
 async function sendMessage(){
@@ -147,8 +151,8 @@ $('loginForm').addEventListener('submit',async e=>{
   catch(err){$('loginError').textContent=err.message;}
   finally{$('loginButton').disabled=false;}
 });
-$('logoutButton').addEventListener('click',async()=>{try{await post('/api/logout',{});}finally{showLogin();}});
-$('backButton').addEventListener('click',()=>{$('workspace').classList.remove('open-room');state.room=null;renderRooms();});
+$('logoutButton').addEventListener('click',async()=>{try{await post('/api/logout',{});}finally{if(state.me)sessionStorage.removeItem('iachat:last:'+state.me.id);showLogin();}});
+$('backButton').addEventListener('click',()=>{$('workspace').classList.remove('open-room');if(state.me)sessionStorage.removeItem('iachat:last:'+state.me.id);state.room=null;renderRooms();});
 $('refreshButton').addEventListener('click',()=>state.room&&void newerMessages(state.room.id));
 $('filterRooms').addEventListener('input',renderRooms);
 $('loadOlder').addEventListener('click',()=>void loadOlder().catch(e=>$('sendStatus').textContent=e.message));
