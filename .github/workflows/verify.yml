@@ -20,5 +20,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run bootstrap
       - run: npm run check
+      - run: npm run check:web
+      - run: npm run build:web
       - run: npm test
       - run: git diff --check
