@@ -28,6 +28,7 @@ export function openStore(file) {
   db.exec("CREATE TABLE IF NOT EXISTS members(room_id TEXT NOT NULL REFERENCES rooms(id),user_id TEXT NOT NULL REFERENCES users(id),PRIMARY KEY(room_id,user_id));");
   db.exec("CREATE TABLE IF NOT EXISTS messages(seq INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE NOT NULL,room_id TEXT NOT NULL REFERENCES rooms(id),sender_id TEXT NOT NULL REFERENCES users(id),body TEXT NOT NULL,created_at INTEGER NOT NULL,idem_key TEXT NOT NULL,UNIQUE(room_id,sender_id,idem_key));");
   db.exec("CREATE INDEX IF NOT EXISTS message_order ON messages(room_id,seq);");
+  db.exec("CREATE TABLE IF NOT EXISTS room_views(room_id TEXT NOT NULL REFERENCES rooms(id),user_id TEXT NOT NULL REFERENCES users(id),last_read_seq INTEGER NOT NULL DEFAULT 0,archived INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(room_id,user_id));");
   return db;
 }
 export function addUser(db,username,password,name=username) {
@@ -86,9 +87,17 @@ export async function startChat({dbPath=join(root,'data/chat.sqlite'),port=4051,
         listeners.delete(u.id);
         return response(res,200,{ok:true},{'Set-Cookie':'iachat_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'+(secureCookies?'; Secure':'')});
       }
+      if(method==='GET'&&path==='/api/contacts'){
+        return response(res,200,{items:db.prepare('SELECT id,username,display_name FROM users WHERE id<>? ORDER BY display_name COLLATE NOCASE LIMIT 150').all(u.id).map(x=>({id:x.id,username:x.username,displayName:x.display_name}))});
+      }
       if(method==='GET'&&path==='/api/rooms'){
         const rows=db.prepare("SELECT r.*, (SELECT body FROM messages WHERE room_id=r.id ORDER BY seq DESC LIMIT 1) AS preview, COALESCE((SELECT MAX(seq) FROM messages WHERE room_id=r.id),0) AS last_seq, (SELECT u.display_name FROM users u JOIN members m ON m.user_id=u.id WHERE m.room_id=r.id AND u.id<>? LIMIT 1) AS peer FROM rooms r JOIN members mine ON mine.room_id=r.id WHERE mine.user_id=? ORDER BY last_seq DESC,r.created_at DESC").all(u.id,u.id);
-        return response(res,200,{items:rows.map(r=>({id:r.id,name:r.kind==='direct'?r.peer:r.name,kind:r.kind,preview:r.preview||'',lastSeq:r.last_seq}))});
+        return response(res,200,{items:rows.map(r=>{
+          const status=db.prepare('SELECT last_read_seq,archived FROM room_views WHERE room_id=? AND user_id=?').get(r.id,u.id);
+          const unread=db.prepare('SELECT COUNT(*) n FROM messages WHERE room_id=? AND sender_id<>? AND seq>?').get(r.id,u.id,status?.last_read_seq??0).n;
+          return {id:r.id,name:r.kind==='direct'?r.peer:r.name,kind:r.kind,preview:r.preview||'',lastSeq:r.last_seq,unread,archived:!!status?.archived,
+            lastAt:db.prepare('SELECT created_at t FROM messages WHERE room_id=? ORDER BY seq DESC LIMIT 1').get(r.id)?.t||r.created_at};
+        })});
       }
       if(method==='POST'&&path==='/api/rooms'){
         const v=await readJson(req);
@@ -109,6 +118,14 @@ export async function startChat({dbPath=join(root,'data/chat.sqlite'),port=4051,
         catch(e){db.exec('ROLLBACK');throw e;}
         return response(res,201,{roomId:id});
       }
+      const archive=path.match(/^\/api\/rooms\/([0-9a-f-]{36})\/archive$/);
+      if(archive&&method==='POST'){
+        isMember(archive[1],u.id);
+        const values=await readJson(req);
+        if(typeof values.archived!=='boolean')reject(400,'Estado inválido');
+        db.prepare('INSERT INTO room_views(room_id,user_id,archived) VALUES(?,?,?) ON CONFLICT(room_id,user_id) DO UPDATE SET archived=excluded.archived').run(archive[1],u.id,values.archived?1:0);
+        return response(res,200,{roomId:archive[1],archived:values.archived});
+      }
       const match=path.match(/^\/api\/rooms\/([0-9a-f-]{36})\/messages$/);
       if(match){
         const room=match[1];isMember(room,u.id);
@@ -118,6 +135,10 @@ export async function startChat({dbPath=join(root,'data/chat.sqlite'),port=4051,
           const base='SELECT m.*,users.display_name FROM messages m JOIN users ON users.id=m.sender_id WHERE m.room_id=?';
           const rows=after?db.prepare(base+' AND m.seq>? ORDER BY m.seq ASC LIMIT 101').all(room,Number(after)):db.prepare(base+(before?' AND m.seq<?':'')+' ORDER BY m.seq DESC LIMIT 51').all(...(before?[room,Number(before)]:[room]));
           const items=(after?rows.slice(0,100):rows.slice(0,50).reverse()).map(dto);
+          if(!before){
+            const high=db.prepare('SELECT MAX(seq) n FROM messages WHERE room_id=?').get(room).n||0;
+            db.prepare('INSERT INTO room_views(room_id,user_id,last_read_seq) VALUES(?,?,?) ON CONFLICT(room_id,user_id) DO UPDATE SET last_read_seq=MAX(room_views.last_read_seq,excluded.last_read_seq)').run(room,u.id,high);
+          }
           return response(res,200,{items,nextBefore:!after&&rows.length>50?String(items[0].seq):null,hasMore:!!after&&rows.length>100});
         }
         if(method==='POST'){
@@ -127,6 +148,7 @@ export async function startChat({dbPath=join(root,'data/chat.sqlite'),port=4051,
           if(old){if(old.body!==message)reject(409,'Mensaje diferente con la misma clave');return response(res,200,{message:dto({...old,display_name:u.display_name}),duplicate:true});}
           const m={id:randomUUID(),room_id:room,sender_id:u.id,body:message,created_at:Date.now()};
           const seq=Number(db.prepare('INSERT INTO messages(id,room_id,sender_id,body,created_at,idem_key) VALUES(?,?,?,?,?,?)').run(m.id,room,u.id,message,m.created_at,key).lastInsertRowid);
+          db.prepare('INSERT INTO room_views(room_id,user_id,last_read_seq) VALUES(?,?,?) ON CONFLICT(room_id,user_id) DO UPDATE SET last_read_seq=MAX(room_views.last_read_seq,excluded.last_read_seq)').run(room,u.id,seq);
           events(room,seq);
           return response(res,201,{message:dto({...m,seq,display_name:u.display_name}),duplicate:false});
         }
