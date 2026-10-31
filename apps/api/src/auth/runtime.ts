@@ -20,6 +20,7 @@ export function selfHostedRuntimeOptions(provisioning = false) {
     // An empty list keeps MCP closed while the human account login is brought online.
     clientIds: provisioning ? [] : (process.env.IAAPP_OAUTH_CLIENT_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean),
     allowSignUp: provisioning,
+    enableMailbox: !provisioning && process.env.IAAPP_MAILBOX_ENABLED === 'true',
   };
   return { options, close: async () => { await sql.destroy(); await db.close(); } };
 }
