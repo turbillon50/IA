@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import type { Database } from "./sql.ts";
 import { createHash } from "node:crypto";
-const migrations = ["001_core.sql", "002_authorized_updates.sql"];
+const migrations = ["001_core.sql", "002_authorized_updates.sql", "003_self_hosted_auth.sql"];
 export async function migrate(db: Database) {
   // All new migrations commit atomically, with checksum protection and one migrator.
   const pending = await Promise.all(

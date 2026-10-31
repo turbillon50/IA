@@ -32,16 +32,21 @@ function text(value: unknown, max = 16384): string {
 function keys(value: Record<string, any>, allowed: string[]) {
   if (Object.keys(value).some(k => !allowed.includes(k))) throw new RpcError(-32602, 'INVALID_PARAMS');
 }
-export interface McpConfig {
-  oauth: OAuthConfig; repository: McpRepository; webhookPost: WebhookPost;
-  encryptionKey: Buffer; metadataUrl: string;
+interface BaseMcpConfig {
+  oauth: OAuthConfig; metadataUrl: string;
   /** Browser origins for human administration are configured separately. */
   allowedOrigins: readonly string[];
 }
+export type McpConfig = BaseMcpConfig & ({
+  mode: 'profile';
+  getAuthorizedProfile(userId: string): Promise<{ userId: string; lineNumber: string; displayName: string } | null>;
+} | {
+  mode?: 'full'; repository: McpRepository; webhookPost: WebhookPost; encryptionKey: Buffer;
+});
 export function createMcpHandler(config: McpConfig) {
-  if (config.encryptionKey.length !== 32) throw new Error('INVALID_ENCRYPTION_KEY');
+  if (config.mode !== 'profile' && config.encryptionKey.length !== 32) throw new Error('INVALID_ENCRYPTION_KEY');
   const verificationCache = new Map<string, number>();
-  const metadata = { resource: config.oauth.resource, authorization_servers: [config.oauth.issuer], scopes_supported: ['iaapp:connect', 'iaapp:respond'] };
+  const metadata = { resource: config.oauth.resource, authorization_servers: [config.oauth.issuer], scopes_supported: config.mode === 'profile' ? ['iaapp:connect'] : ['iaapp:connect', 'iaapp:respond'] };
   const send = (res: ServerResponse, status: number, body: unknown) => {
     res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(body === undefined ? undefined : JSON.stringify(body));
   };
@@ -52,7 +57,7 @@ export function createMcpHandler(config: McpConfig) {
     if (path !== new URL(config.oauth.resource).pathname) return send(res, 404, { error: 'NOT_FOUND' });
     let principal: Principal;
     try { principal = await authenticate(req.headers.authorization, config.oauth, ['iaapp:connect']); }
-    catch { res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${config.metadataUrl}", scope="iaapp:connect iaapp:respond"`); return send(res, 401, { error: 'UNAUTHENTICATED' }); }
+    catch { res.setHeader('WWW-Authenticate', `Bearer resource_metadata="${config.metadataUrl}", scope="${metadata.scopes_supported.join(' ')}"`); return send(res, 401, { error: 'UNAUTHENTICATED' }); }
     if (req.method === 'GET' || req.method === 'DELETE') return send(res, 405, { error: 'METHOD_NOT_ALLOWED' });
     if (req.method !== 'POST' || !req.headers['content-type']?.startsWith('application/json')) return send(res, 415, { error: 'JSON_REQUIRED' });
     let id: string | number | null = null;
@@ -71,12 +76,13 @@ export function createMcpHandler(config: McpConfig) {
       const p = record(rpc.params ?? {});
       let result: unknown;
       switch (rpc.method) {
-        case 'initialize': result = { protocolVersion: '2025-03-26', capabilities: { tools: {}, events: {} }, serverInfo: { name: 'iaapp', version: '0.1.0' } }; break;
+        case 'initialize': result = { protocolVersion: '2025-03-26', capabilities: config.mode === 'profile' ? { tools: {} } : { tools: {}, events: {} }, serverInfo: { name: 'iaapp', version: '0.1.0' } }; break;
         case 'ping': result = {}; break;
-        case 'events/list': result = { events: [eventDefinition] }; break;
-        case 'tools/list': result = { tools }; break;
+        case 'events/list': result = { events: config.mode === 'profile' ? [] : [eventDefinition] }; break;
+        case 'tools/list': result = { tools: config.mode === 'profile' ? tools.filter(t => t.name === 'get_my_profile') : tools }; break;
         case 'events/subscribe':
         case 'events/unsubscribe': {
+          if (config.mode === 'profile') throw new RpcError(-32601, 'METHOD_NOT_FOUND');
           keys(p, ['name', 'arguments', 'delivery', 'cursor', 'ttlMs']);
           if (p.name !== 'message.created' || (p.cursor !== undefined && p.cursor !== null)) throw new RpcError(-32602, 'INVALID_EVENT_OR_CURSOR');
           const args = record(p.arguments), delivery = record(p.delivery);
@@ -110,7 +116,15 @@ export function createMcpHandler(config: McpConfig) {
         case 'tools/call': {
           keys(p, ['name', 'arguments', '_meta']);
           const a = record(p.arguments ?? {}); let value: unknown;
-          if (p.name === 'get_my_profile') { keys(a, []); value = { userId: principal.userId }; }
+          if (p.name === 'get_my_profile') {
+            keys(a, []);
+            if (config.mode === 'profile') {
+              const profile = await config.getAuthorizedProfile(principal.userId);
+              if (!profile || profile.userId !== principal.userId) throw new RpcError(-32001, 'FORBIDDEN');
+              value = profile;
+            } else value = { userId: principal.userId };
+          }
+          else if (config.mode === 'profile') throw new RpcError(-32601, 'UNKNOWN_TOOL');
           else if (p.name === 'claim_pairing') {
             keys(a, ['code']); const binding = await config.repository.claimPairing(principal, hash(text(a.code, 128)), Date.now());
             value = { connectionId: binding.id, participantId: binding.participantId, generation: binding.generation, state: binding.state };

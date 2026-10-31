@@ -15,7 +15,7 @@
   "scripts": {
     "bootstrap": "node scripts/bootstrap.mjs",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "node --experimental-strip-types --test packages/db/test/*.test.ts apps/api/src/mcp/*.test.ts apps/worker/*.test.ts tests/integration/*.test.ts",
+    "test": "node --experimental-strip-types --test apps/api/src/auth/*.test.ts packages/db/test/*.test.ts apps/api/src/mcp/*.test.ts apps/worker/*.test.ts tests/integration/*.test.ts",
     "start:api": "npm start --prefix apps/api/src/rest",
     "migrate": "npm run migrate --prefix packages/db",
     "dev:web": "npm run dev -w @iaapp/web",

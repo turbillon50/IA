@@ -43,6 +43,10 @@ export function unseal(value: string, key: Buffer, context: string): string {
 export interface Principal { userId: string; identityKey: string; scopes: string[] }
 export interface OAuthConfig {
   issuer: string; resource: string; clientIds: readonly string[];
+  /** Issuer-specific claim, configured by the server, never by token input. */
+  clientIdClaim?: 'client_id' | 'azp';
+  /** Optional live grant/session check after all cryptographic checks. */
+  isTokenActive?: (token: string, clientId: string) => Promise<boolean>;
   /** Resolve ONLY against the configured issuer's pinned JWKS; never JWT jku/x5u. */
   resolveKey(kid: string): Promise<KeyObject>;
   /** Must check current account/grant revocation and map (issuer, client_id, sub). */
@@ -61,10 +65,13 @@ export async function authenticate(header: string | undefined, config: OAuthConf
     const seconds = Math.floor(now / 1000);
     if (c.iss !== config.issuer || !(Array.isArray(c.aud) ? c.aud.includes(config.resource) : c.aud === config.resource)
       || !Number.isFinite(c.exp) || c.exp <= seconds || (c.nbf !== undefined && (!Number.isFinite(c.nbf) || c.nbf > seconds))
-      || typeof c.sub !== 'string' || !c.sub || !config.clientIds.includes(c.client_id)) throw new Error();
+      || typeof c.sub !== 'string' || !c.sub) throw new Error();
+    const clientId = c[config.clientIdClaim ?? 'client_id'];
+    if (typeof clientId !== 'string' || !config.clientIds.includes(clientId)) throw new Error();
     const scopes = typeof c.scope === 'string' ? c.scope.split(' ').filter(Boolean) : [];
     if (!required.every(scope => scopes.includes(scope))) throw new Error();
-    const userId = await config.resolveIdentity({ issuer: c.iss, clientId: c.client_id, subject: c.sub, tokenId: c.jti });
+    if (config.isTokenActive && !await config.isTokenActive(header.slice(7), clientId)) throw new Error();
+    const userId = await config.resolveIdentity({ issuer: c.iss, clientId, subject: c.sub, tokenId: c.jti });
     if (!userId) throw new Error();
     return { userId, identityKey: hash(canonical([c.iss, c.client_id, c.sub])), scopes };
   } catch { throw new Error('UNAUTHENTICATED'); }
