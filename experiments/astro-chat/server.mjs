@@ -82,6 +82,8 @@ export async function startChat({dbPath=join(root,'data/chat.sqlite'),port=4051,
       if(method==='GET'&&path==='/api/me')return response(res,200,{user:{id:u.id,username:u.username,displayName:u.display_name}});
       if(method==='POST'&&path==='/api/logout'){
         db.prepare('DELETE FROM sessions WHERE hash=?').run(sha(sessionCookie(req)));
+        for(const stream of listeners.get(u.id)||[])stream.end();
+        listeners.delete(u.id);
         return response(res,200,{ok:true},{'Set-Cookie':'iachat_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'+(secureCookies?'; Secure':'')});
       }
       if(method==='GET'&&path==='/api/rooms'){
