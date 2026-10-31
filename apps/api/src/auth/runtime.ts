@@ -17,10 +17,10 @@ export function selfHostedRuntimeOptions(provisioning = false) {
   const options = {
     baseURL: required('IAAPP_PUBLIC_ORIGIN'), secret: required('IAAPP_AUTH_SECRET'),
     database: { db: sql, type: 'postgres' as const, schemaName: 'iaapp_auth' }, db,
-    clientIds: provisioning ? [] : required('IAAPP_OAUTH_CLIENT_IDS').split(',').map(s => s.trim()).filter(Boolean),
+    // An empty list keeps MCP closed while the human account login is brought online.
+    clientIds: provisioning ? [] : (process.env.IAAPP_OAUTH_CLIENT_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean),
     allowSignUp: provisioning,
   };
-  if (!provisioning && !options.clientIds.length) throw new Error('OAUTH_CLIENT_IDS_REQUIRED');
   return { options, close: async () => { await sql.destroy(); await db.close(); } };
 }
 

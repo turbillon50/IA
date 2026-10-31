@@ -33,7 +33,9 @@ Configurar por el administrador de secretos, sin pegar valores en chats ni git:
 - `IAAPP_PUBLIC_ORIGIN`: origen HTTPS público exacto, sin ruta ni parámetros.
 - `IAAPP_AUTH_SECRET`: secreto aleatorio de al menos 32 caracteres; conservarlo
   entre reinicios (protege las claves de firma almacenadas).
-- `IAAPP_OAUTH_CLIENT_IDS`: identificador o identificadores previamente registrados.
+- `IAAPP_OAUTH_CLIENT_IDS`: identificadores previamente registrados. Puede omitirse
+  al activar el acceso humano: en ese caso MCP rechaza todos los tokens hasta
+  registrar y configurar el cliente real. No se fabrica un cliente provisional.
 - `PORT`: puerto interno, por defecto 3001.
 
 Preparación explícita, después de respaldo y revisión del entorno:
@@ -52,8 +54,16 @@ Preparación explícita, después de respaldo y revisión del entorno:
 Nginx debe dirigir `/api/auth/*`, `/auth/*`, `/api/v1/*`, `/mcp`, `/healthz` y las
 rutas `/.well-known/*` a esta misma API, conservando host/protocolo y cookies.
 Si pasa por MetaMCP, comprobar que no sustituya tokens de usuario por uno global.
-La web existente aún tiene pantallas Neon: esta entrega ofrece acceso propio en
-`/auth/sign-in`; cambiar la navegación de la PWA requiere coordinación con frontend.
+La web usa `/sign-in` y `/alta` con la sesión propia. Configurar
+`IAAPP_AUTH_UPSTREAM` en Vercel con la URL HTTPS del prefijo API del servidor.
+El proxy fijo conserva cookies HttpOnly y los parámetros OAuth firmados; no
+permite elegir destinos ni acceder a administración/registro de cuentas.
+
+El operador puede usar `importExistingCredentials` de `import-existing.ts` para
+copiar cuentas existentes desde `neon_auth` al esquema propio, después del
+respaldo. Exige mapeo por issuer/client/subject al usuario existente y excluye
+cuentas bloqueadas. No copia sesiones, tokens de proveedores ni claves. Preserva
+contraseñas mediante sus hashes y no vincula por coincidencia de correo.
 
 Descubrimiento público:
 

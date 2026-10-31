@@ -7,6 +7,7 @@ import { Kysely, PostgresDialect } from 'kysely';
 import { createSelfHostedIdentity } from './self-hosted.ts';
 import { createSelfHostedApplication } from '../rest/self-hosted.ts';
 import { Script } from 'node:vm';
+import { importExistingCredentials } from './import-existing.ts';
 import { migrate } from '../../../../packages/db/src/migrate.ts';
 import type { Database, Query } from '../../../../packages/db/src/sql.ts';
 
@@ -139,6 +140,23 @@ test('self-hosted account -> real OAuth code + PKCE -> authorized persistent lin
     const newCookie = login.headers.getSetCookie().map(s => s.split(';')[0]).join('; ');
     const again = await fetch(base + '/auth/profile', { headers: { cookie: newCookie } });
     assert.deepEqual(await again.json(), line, 'a new HTTP login preserves the same permanent line');
+    // A legacy account keeps its original application identity and password hash.
+    const bobIdentity=await own.resolver.authenticate(new Request(options.baseURL,{headers:{cookie:bobCookie}}));
+    const bobSubject=bobIdentity.identity.subject;
+    await pg.exec('CREATE SCHEMA neon_auth');
+    await pg.exec('CREATE TABLE neon_auth."user" AS SELECT *,false AS banned FROM iaapp_auth."user" WITH NO DATA');
+    await pg.exec('CREATE TABLE neon_auth.account AS SELECT * FROM iaapp_auth.account WITH NO DATA');
+    await pg.query('INSERT INTO neon_auth."user" SELECT *,false FROM iaapp_auth."user" WHERE id=$1',[bobSubject]);
+    await pg.query('INSERT INTO neon_auth.account SELECT * FROM iaapp_auth.account WHERE "userId"=$1',[bobSubject]);
+    const legacyIssuer='https://legacy-auth.example.test';
+    await pg.query("INSERT INTO iaapp.external_identities(user_id,issuer,client_id,subject) VALUES($1,$2,'iaapp-web',$3)",[bobIdentity.actor.userId,legacyIssuer,bobSubject]);
+    await pg.query('DELETE FROM iaapp_auth."user" WHERE id=$1',[bobSubject]);
+    assert.deepEqual(await importExistingCredentials(db,legacyIssuer,own.issuer),{imported:1});
+    assert.deepEqual(await importExistingCredentials(db,legacyIssuer,own.issuer),{imported:0});
+    const restored=await req('/sign-in/email',{email:'bob@example.test',password:'Synthetic-only-2026!'});
+    assert.equal(restored.status,200);
+    const restoredCookie=restored.headers.getSetCookie().map(s=>s.split(';')[0]).join('; ');
+    assert.equal((await own.resolver.authenticate(new Request(options.baseURL,{headers:{cookie:restoredCookie}}))).actor.userId,bobIdentity.actor.userId);
   } finally {
     if (server) { server.closeAllConnections(); await new Promise<void>(resolve => server!.close(() => resolve())); }
     await sql.destroy(); await pg.close();
