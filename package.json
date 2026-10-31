@@ -1,6 +1,7 @@
 {
   "name":"iaapp","private":true,"type":"module","engines":{"node":">=24 <25"},
   "workspaces":["apps/web","packages/ui"],
+  "overrides":{"next":"15.5.28"},
   "scripts":{"bootstrap":"node scripts/bootstrap.mjs","check":"tsc --noEmit -p tsconfig.json","test":"node --experimental-strip-types --test packages/db/test/*.test.ts apps/api/src/mcp/*.test.ts apps/worker/*.test.ts tests/integration/*.test.ts","start:api":"npm start --prefix apps/api/src/rest","migrate":"npm run migrate --prefix packages/db","dev:web":"npm run dev -w @iaapp/web","build:web":"npm run build -w @iaapp/web","check:web":"npm run typecheck -w @iaapp/web"},
   "devDependencies":{"@types/node":"24.10.0","typescript":"5.9.3"}
 }
