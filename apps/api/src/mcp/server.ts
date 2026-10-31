@@ -37,6 +37,8 @@ export interface McpConfig {
   encryptionKey: Buffer; metadataUrl: string;
   /** Browser origins for human administration are configured separately. */
   allowedOrigins: readonly string[];
+  /** Resolve the authorized IAapp account server-side after OAuth verification. */
+  getAuthorizedProfile?: (userId: string) => Promise<{ userId: string; displayName: string; email?: string } | null>;
 }
 export function createMcpHandler(config: McpConfig) {
   if (config.encryptionKey.length !== 32) throw new Error('INVALID_ENCRYPTION_KEY');
@@ -110,7 +112,13 @@ export function createMcpHandler(config: McpConfig) {
         case 'tools/call': {
           keys(p, ['name', 'arguments', '_meta']);
           const a = record(p.arguments ?? {}); let value: unknown;
-          if (p.name === 'get_my_profile') { keys(a, []); value = { userId: principal.userId }; }
+          if (p.name === 'get_my_profile') {
+            keys(a, []);
+            // A signed token alone does not grant access to an arbitrary profile.
+            const profile = await config.getAuthorizedProfile?.(principal.userId);
+            if (!profile || profile.userId !== principal.userId) throw new RpcError(-32001, 'FORBIDDEN');
+            value = { userId: profile.userId, displayName: profile.displayName, ...(profile.email ? { email: profile.email } : {}) };
+          }
           else if (p.name === 'claim_pairing') {
             keys(a, ['code']); const binding = await config.repository.claimPairing(principal, hash(text(a.code, 128)), Date.now());
             value = { connectionId: binding.id, participantId: binding.participantId, generation: binding.generation, state: binding.state };
