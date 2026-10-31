@@ -1,0 +1,2 @@
+import { ChatView } from '../../chat-view';
+export default async function RoomPage({params}:{params:Promise<{roomId:string}>}) { const {roomId}=await params; return <ChatView roomId={roomId} />; }
