@@ -319,9 +319,36 @@ export class Repository {
     });
   }
   project(a: Actor, p: string) {
-    return this.db.transaction(async (tx) =>
-      projectDTO(await projectAccess(tx, a, p)),
-    );
+    return this.db.transaction(async (tx) => {
+      const project = await projectAccess(tx, a, p);
+      const rooms = (
+        await tx.query(
+          "SELECT count(*) AS total FROM iaapp.rooms r JOIN iaapp.room_members rm ON rm.room_id=r.id JOIN iaapp.participants p ON p.id=rm.participant_id WHERE r.project_id=$1 AND p.user_id=$2 AND rm.accepted_at IS NOT NULL AND rm.left_at IS NULL",
+          [p, a.userId],
+        )
+      ).rows[0];
+      const tasks = (
+        await tx.query(
+          "SELECT count(*) AS total,count(*) FILTER(WHERE status='done') AS done FROM iaapp.tasks WHERE project_id=$1",
+          [p],
+        )
+      ).rows[0];
+      const memory = (
+        await tx.query(
+          "SELECT count(*) AS total FROM iaapp.memory_entries WHERE project_id=$1",
+          [p],
+        )
+      ).rows[0];
+      return {
+        ...projectDTO(project),
+        summary: {
+          roomCount: Number(rooms.total),
+          taskCount: Number(tasks.total),
+          completedTaskCount: Number(tasks.done),
+          memoryCount: Number(memory.total),
+        },
+      };
+    });
   }
   createRoom(
     a: Actor,
