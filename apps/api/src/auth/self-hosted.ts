@@ -7,6 +7,7 @@ import type { Database } from '../../../../packages/db/src/sql.ts';
 import { DomainError } from '../../../../packages/db/src/sql.ts';
 import { IdentityResolver, type AuthAdapter, type HumanIdentity } from './identity.ts';
 import type { McpConfig } from '../mcp/server.ts';
+import { createMailboxStore } from '../mcp/mailbox.ts';
 export { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 export { oauthProviderAuthServerMetadata, oauthProviderOpenIdConfigMetadata, verifyOAuthQueryParams } from '@better-auth/oauth-provider';
 
@@ -18,6 +19,8 @@ export interface SelfHostedOptions {
   clientIds: readonly string[];
   /** Closed by default; enable only during explicit account provisioning. */
   allowSignUp?: boolean;
+  /** Opt-in only after migration 004 has been applied. */
+  enableMailbox?: boolean;
 }
 
 export function createSelfHostedIdentity(options: SelfHostedOptions) {
@@ -65,6 +68,7 @@ export function createSelfHostedIdentity(options: SelfHostedOptions) {
   const resolver = new IdentityResolver(options.db, adapter);
   const mcp: McpConfig = {
     mode: 'profile', allowedOrigins: [origin],
+    ...(options.enableMailbox ? { mailbox: createMailboxStore(options.db) } : {}),
     metadataUrl: origin + '/.well-known/oauth-protected-resource/mcp',
     oauth: {
       issuer, resource, clientIds: options.clientIds, clientIdClaim: 'azp',
