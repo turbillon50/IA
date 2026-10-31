@@ -46,7 +46,7 @@ El MCP de IAapp debe usar un proveedor OAuth compatible con la especificación y
 | API y worker | Railway, dos procesos | Servicio HTTP público y procesamiento continuo |
 | Calidad | Playwright + pruebas de contrato y permisos | Flujos, tamaños, conexiones y aislamiento |
 
-No se crean servicios, suscripciones ni cobros durante esta etapa. Fijar versiones estables concretas en lockfile al iniciar implementación. No agregar Redis al piloto: una cola transaccional en Postgres es suficiente para el volumen inicial. Crecer a otro broker únicamente con mediciones.
+Esta etapa publica solamente una demo estática en el proyecto Vercel `iaapp-design`, conectado a este repositorio. No provisiona todavía Clerk, Supabase, Railway ni servicios de IA. Fijar versiones estables concretas en lockfile al iniciar implementación. No agregar Redis al piloto: una cola transaccional en Postgres es suficiente para el volumen inicial. Crecer a otro broker únicamente con mediciones.
 
 Supabase admite Clerk como autenticación de terceros. Las políticas deben usar el `sub` externo como texto y la pertenencia del usuario; no asumir que es un UUID de `auth.users`. Los tokens OAuth del MCP se validan en el servidor y se traducen a un usuario interno; no se envían directamente a Realtime por suposición.
 

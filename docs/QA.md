@@ -13,7 +13,19 @@ Estado: prototipo de diseño navegable. No constituye validación de un backend 
 - Guardar un acuerdo seleccionando `Proyecto IAapp`: apareció con ese ámbito y autor Luis.
 - Vincular una IA: el paso de emparejamiento conservó el nombre introducido y advirtió que el código era ilustrativo.
 
-La revisión visual detectó y corrigió el ancho de los avatares de grupo, el monograma de la barra lateral, la altura del campo de mensaje en móvil, la etiqueta accesible de Ajustes y los metadatos de grupos nuevos.
+La revisión visual detectó y corrigió el ancho de los avatares de grupo, el monograma de la barra lateral, la altura y placeholder del campo de mensaje en móvil, el truncamiento de las vistas previas, la etiqueta accesible de Ajustes y los metadatos de grupos nuevos.
+
+## Verificación final
+
+- Código de interfaz revisado: commit `1fb7ed931e67d6a8dc981a6f3c4e7bfcbf31f54c`, deployment `dpl_47g2Rw8A1CAzsLQ6V142B8tLRR7B`, estado READY.
+- Lista móvil: ancho visible y ancho de contenido de 390 px; sin desplazamiento horizontal.
+- Lista de escritorio: ambos anchos de 323 px; sin desplazamiento horizontal.
+- Campo de mensaje móvil: alto visible y alto de contenido de 48 px; sin barra vertical en vacío.
+- Avatares y título del grupo separados: borde derecho de avatares en 118 px, inicio del título en 127 px.
+- El último paso de vinculación muestra `Prueba de ida y vuelta · Pendiente`; no afirma una conexión real.
+- Evidencia: [atlas capturado en navegador](visuals/iaapp-v1.jpg), [atlas interactivo](https://iaapp-design.vercel.app/screens.html).
+
+Los errores observados en la consola de la sesión pertenecían a la extensión del navegador. Esta comprobación no equivale a una auditoría completa de accesibilidad o rendimiento.
 
 ## Pendiente para el producto real
 
