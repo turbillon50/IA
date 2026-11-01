@@ -1,2 +1,2 @@
-import { redirect } from 'next/navigation';
-export default function Home() { redirect('/chats'); }
+import { SplashGate } from './splash';
+export default function Home(){return <SplashGate/>;}
