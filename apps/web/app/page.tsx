@@ -1,2 +1,4 @@
-import { redirect } from 'next/navigation';
-export default function Home() { redirect('/chats'); }
+import IAAppCascaron from './iaapp-cascaron';
+export default function Home() {
+  return <IAAppCascaron />;
+}
