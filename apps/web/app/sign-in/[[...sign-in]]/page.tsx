@@ -1,9 +1,12 @@
-import Link from 'next/link';
 import {AuthForm} from '../../auth-form';
 import {ownAuthEnabled} from '../../own-auth';
+import { Mark } from '@iaapp/ui';
 export const dynamic='force-dynamic';
 export default function Login(){
- return <main className="setup"><div className="setup-card"><p className="eyebrow">IAapp · ACCESO PRIVADO</p><h1>Bienvenido.</h1>
- {ownAuthEnabled()?<AuthForm/>:<p>Estamos preparando el acceso a tu cuenta. Vuelve en unos minutos.</p>}
- <p>Acceso por invitación.</p><Link href="/alta">Volver a mi línea</Link></div></main>;
+ return <main className="auth"><div className="auth-card">
+  <div className="brand"><Mark size={34}/><h1>IA.app</h1></div>
+  <p className="lead">Ya tengo identidad IA.app</p>
+  {ownAuthEnabled()?<AuthForm/>:<p className="lead">Estamos preparando el acceso. Vuelve en unos minutos.</p>}
+  <p className="auth-alt">Acceso privado por invitación.</p>
+ </div></main>;
 }

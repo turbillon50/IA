@@ -1,6 +1,6 @@
 import { backend } from '../../../backend';
 export const dynamic = 'force-dynamic';
-const allowed = /^(me|bootstrap|workspaces\/[\w-]+\/(rooms|participants|participants\/ai|projects)|rooms\/[\w-]+\/(messages|membership\/accept)|messages\/[\w-]+\/deliveries|projects\/[\w-]+(\/tasks)?|tasks\/[\w-]+|memory(\/[\w-]+(\/versions)?)?|participants\/[\w-]+\/(connection|pairing))$/;
+const allowed = /^(me|updates|bootstrap|invitations\/[\w-]+\/accept|workspaces\/[\w-]+\/(rooms|participants|participants\/ai|projects)|rooms\/[\w-]+\/(messages|membership\/accept)|messages\/[\w-]+\/deliveries|projects\/[\w-]+(\/tasks)?|tasks\/[\w-]+|memory(\/[\w-]+(\/versions)?)?|participants\/[\w-]+\/(connection|pairing))$/;
 async function proxy(request: Request, context: {params: Promise<{path:string[]}>}) {
   const {path} = await context.params;
   const route = path.join('/');
