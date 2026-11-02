@@ -1,0 +1,34 @@
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+const base=process.env.BASE_URL, shots='/tmp/shots';
+fs.mkdirSync(shots,{recursive:true});
+const email=process.env.QA_EMAIL, pass=process.env.QA_PASS;
+const browser=await chromium.launch();
+// escritorio
+const d=await browser.newContext({viewport:{width:1440,height:900}}); const dp=await d.newPage();
+await dp.goto(base+'/',{waitUntil:'networkidle'}).catch(()=>{});
+await dp.waitForTimeout(1500); await dp.screenshot({path:shots+'/1-splash-desktop.png'});
+await dp.goto(base+'/sign-in',{waitUntil:'networkidle'}).catch(()=>{});
+await dp.waitForTimeout(900); await dp.screenshot({path:shots+'/2-signin-desktop.png'});
+await dp.fill('input[name=email]',email); await dp.fill('input[name=password]',pass);
+await dp.click('button:has-text("Entrar")');
+await dp.waitForURL(/chats|alta/,{timeout:25000}).catch(()=>{});
+await dp.waitForTimeout(3000); await dp.screenshot({path:shots+'/3-bandeja-desktop.png',fullPage:false});
+await dp.click('.room').catch(()=>{});
+await dp.waitForTimeout(3000); await dp.screenshot({path:shots+'/4-conversacion-desktop.png'});
+await d.close();
+// movil
+const m=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}); const mp=await m.newPage();
+await mp.goto(base+'/',{waitUntil:'networkidle'}).catch(()=>{});
+await mp.waitForTimeout(1500); await mp.screenshot({path:shots+'/5-splash-movil.png'});
+await mp.goto(base+'/sign-in',{waitUntil:'networkidle'}).catch(()=>{});
+await mp.waitForTimeout(900);
+await mp.fill('input[name=email]',email); await mp.fill('input[name=password]',pass);
+await mp.click('button:has-text("Entrar")');
+await mp.waitForURL(/chats|alta/,{timeout:25000}).catch(()=>{});
+await mp.waitForTimeout(3000); await mp.screenshot({path:shots+'/6-bandeja-movil.png'});
+await mp.click('.room').catch(()=>{});
+await mp.waitForTimeout(3000); await mp.screenshot({path:shots+'/7-conversacion-movil.png'});
+await m.close();
+await browser.close();
+console.log('CAPTURAS LISTAS');

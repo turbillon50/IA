@@ -7,4 +7,4 @@ export function Badge({children}:{children:ReactNode}){return <span className="b
 export function EmptyState({title,children}:{title:string;children?:ReactNode}){
  return <div className="empty"><h2>{title}</h2>{children&&<p>{children}</p>}</div>;
 }
-export function Mark({size=28}:{size?:number}){return <svg className="mark" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21.5 20 L2.5 20 Z" fill="currentColor"/></svg>;}
+export function Mark({size=28}:{size?:number}){return <svg className="mark" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 L21.5 4 L2.5 4 Z" fill="currentColor"/></svg>;}
