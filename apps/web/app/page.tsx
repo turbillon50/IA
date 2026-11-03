@@ -1,2 +1,4 @@
-import { SplashGate } from './splash';
-export default function Home(){return <SplashGate/>;}
+import IAAppCascaron from './iaapp-cascaron';
+export default function Home() {
+  return <IAAppCascaron />;
+}

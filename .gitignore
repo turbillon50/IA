@@ -11,3 +11,4 @@ playwright-report/
 
 # Build-time generated real Flutter chat shell
 apps/web/public/chat-client/
+.next-old*
