@@ -75,7 +75,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .splash .mark{color:var(--text);width:46px;height:46px}
 .splash .word{font-size:32px;font-weight:700;letter-spacing:-.03em;margin-top:26px}
 .splash .kicker{font-size:12px;font-weight:600;letter-spacing:.5em;color:var(--muted);margin-top:10px;text-indent:.5em}
-.splash .tap{position:absolute;bottom:calc(46px + env(safe-area-inset-bottom));font-size:11px;letter-spacing:.28em;color:var(--muted);animation:breathe 2.4s ease-in-out infinite}
+.splash .tap{position:absolute;bottom:calc(46px + env(safe-area-inset-bottom));font-size:11px;letter-spacing:.28em;color:var(--soft);animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
